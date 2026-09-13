@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Specialized;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Threading;
 using DiskUsage.Models;
 using DiskUsage.Services;
 using DiskUsage.ViewModels;
@@ -19,6 +21,7 @@ namespace DiskUsage.Views
         private readonly ITreemapLayoutEngine _layoutEngine = new TreemapLayoutEngine();
         private IReadOnlyList<TreemapNode> _nodes = Array.Empty<TreemapNode>();
         private TreemapNode? _hoveredNode;
+        private bool _isLayoutScheduled;
 
         private readonly Pen _borderPen;
         private readonly Pen _hoverPen;
@@ -87,6 +90,15 @@ namespace DiskUsage.Views
             _secondaryTextBrush = new SolidColorBrush(Color.FromRgb(220, 225, 230));
             _secondaryTextBrush.Freeze();
 
+            Loaded += (s, e) => ScheduleRecalculateLayout();
+            IsVisibleChanged += (s, e) =>
+            {
+                if (IsVisible)
+                {
+                    ScheduleRecalculateLayout();
+                }
+            };
+
             SizeChanged += OnSizeChanged;
             MouseMove += OnMouseMove;
             MouseLeave += OnMouseLeave;
@@ -98,8 +110,23 @@ namespace DiskUsage.Views
         {
             if (d is TreemapControl control)
             {
-                control.RecalculateLayout();
+                if (e.OldValue is INotifyCollectionChanged oldCollection)
+                {
+                    oldCollection.CollectionChanged -= control.OnItemsSourceCollectionChanged;
+                }
+
+                if (e.NewValue is INotifyCollectionChanged newCollection)
+                {
+                    newCollection.CollectionChanged += control.OnItemsSourceCollectionChanged;
+                }
+
+                control.ScheduleRecalculateLayout();
             }
+        }
+
+        private void OnItemsSourceCollectionChanged(object? sender, NotifyCollectionChangedEventArgs e)
+        {
+            ScheduleRecalculateLayout();
         }
 
         private static void OnSelectedItemChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -113,6 +140,21 @@ namespace DiskUsage.Views
         private void OnSizeChanged(object sender, SizeChangedEventArgs e)
         {
             RecalculateLayout();
+        }
+
+        private void ScheduleRecalculateLayout()
+        {
+            if (_isLayoutScheduled)
+            {
+                return;
+            }
+
+            _isLayoutScheduled = true;
+            Dispatcher.InvokeAsync(() =>
+            {
+                _isLayoutScheduled = false;
+                RecalculateLayout();
+            }, DispatcherPriority.Loaded);
         }
 
         private void RecalculateLayout()
