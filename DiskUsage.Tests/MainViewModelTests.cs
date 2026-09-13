@@ -220,6 +220,12 @@ namespace DiskUsage.Tests
             Assert.True(rootVm.IsExpanded);
             Assert.True(childVm.IsExpanded);
             Assert.True(grandChildVm.IsSelected);
+
+            // Navigate back up to Child
+            vm.NavigateToFolder(childVm);
+            Assert.True(childVm.IsSelected);
+            Assert.NotNull(vm.CurrentFolder);
+            Assert.Equal("Child", vm.CurrentFolder.Name);
         }
     }
 }

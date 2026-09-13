@@ -188,7 +188,8 @@
                         <TextBlock Text="Folder Hierarchy" FontWeight="SemiBold" FontSize="13" Foreground="#495057" />
                     </Border>
 
-                    <TreeView Grid.Row="1" 
+                    <TreeView x:Name="FolderTreeView"
+                              Grid.Row="1" 
                               ItemsSource="{Binding RootNodes}" 
                               SelectedItemChanged="TreeView_SelectedItemChanged"
                               BorderThickness="0" 
@@ -198,7 +199,15 @@
                                 <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
                                 <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
                                 <Setter Property="Padding" Value="4,3" />
+                                <Setter Property="Cursor" Value="Hand" />
                                 <EventSetter Event="Selected" Handler="TreeViewItem_Selected" />
+                                <Style.Resources>
+                                    <!-- Keep selection prominent whether TreeView has focus or not -->
+                                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightBrushKey}" Color="#0D6EFD" />
+                                    <SolidColorBrush x:Key="{x:Static SystemColors.HighlightTextBrushKey}" Color="#FFFFFF" />
+                                    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightBrushKey}" Color="#D0E2FF" />
+                                    <SolidColorBrush x:Key="{x:Static SystemColors.InactiveSelectionHighlightTextBrushKey}" Color="#084298" />
+                                </Style.Resources>
                             </Style>
                         </TreeView.ItemContainerStyle>
                         <TreeView.ItemTemplate>
