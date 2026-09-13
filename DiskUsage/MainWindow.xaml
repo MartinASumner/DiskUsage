@@ -332,11 +332,33 @@
                     <Grid Grid.Row="2">
                         <Grid.RowDefinitions>
                             <!-- Row 0: DataGrid -->
-                            <RowDefinition Height="*" />
+                            <RowDefinition>
+                                <RowDefinition.Style>
+                                    <Style TargetType="{x:Type RowDefinition}">
+                                        <Setter Property="Height" Value="*" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsDetailsVisible}" Value="False">
+                                                <Setter Property="Height" Value="0" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </RowDefinition.Style>
+                            </RowDefinition>
                             <!-- Row 1: Splitter (visible in Split mode) -->
                             <RowDefinition Height="Auto" />
                             <!-- Row 2: Treemap -->
-                            <RowDefinition Height="*" />
+                            <RowDefinition>
+                                <RowDefinition.Style>
+                                    <Style TargetType="{x:Type RowDefinition}">
+                                        <Setter Property="Height" Value="*" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsTreemapVisible}" Value="False">
+                                                <Setter Property="Height" Value="0" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </RowDefinition.Style>
+                            </RowDefinition>
                         </Grid.RowDefinitions>
 
                         <!-- DataGrid View -->
