@@ -497,7 +497,25 @@
                                               ItemsSource="{Binding FilteredItems}"
                                               SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
                                               DrillDownCommand="{Binding NavigateToFolderCommand}"
-                                              Visibility="{Binding IsTreemapVisible, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                                              Visibility="{Binding IsTreemapVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                            <!-- Context Menu -->
+                            <views:TreemapControl.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="🔍 Focus into Folder" 
+                                              Command="{Binding NavigateToFolderCommand}" 
+                                              CommandParameter="{Binding SelectedItem}" />
+                                    <MenuItem Header="⬆️ Up to Parent Folder" 
+                                              Command="{Binding NavigateUpCommand}" />
+                                    <Separator />
+                                    <MenuItem Header="📁 Open in File Explorer" 
+                                              Command="{Binding OpenInExplorerCommand}" 
+                                              CommandParameter="{Binding SelectedItem}" />
+                                    <MenuItem Header="📋 Copy Full Path" 
+                                              Command="{Binding CopyPathCommand}" 
+                                              CommandParameter="{Binding SelectedItem}" />
+                                </ContextMenu>
+                            </views:TreemapControl.ContextMenu>
+                        </views:TreemapControl>
                     </Grid>
                 </Grid>
             </Border>

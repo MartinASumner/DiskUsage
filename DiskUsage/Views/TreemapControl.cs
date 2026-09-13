@@ -91,6 +91,7 @@ namespace DiskUsage.Views
             MouseMove += OnMouseMove;
             MouseLeave += OnMouseLeave;
             MouseLeftButtonDown += OnMouseLeftButtonDown;
+            MouseRightButtonDown += OnMouseRightButtonDown;
         }
 
         private static void OnItemsSourceChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
@@ -139,6 +140,8 @@ namespace DiskUsage.Views
             var pos = e.GetPosition(this);
             var hit = HitTestNode(pos);
 
+            Cursor = (hit != null && hit.IsDirectory) ? Cursors.Hand : Cursors.Arrow;
+
             if (!ReferenceEquals(hit, _hoveredNode))
             {
                 _hoveredNode = hit;
@@ -149,6 +152,7 @@ namespace DiskUsage.Views
 
         private void OnMouseLeave(object sender, MouseEventArgs e)
         {
+            Cursor = Cursors.Arrow;
             if (_hoveredNode != null)
             {
                 _hoveredNode = null;
@@ -166,13 +170,24 @@ namespace DiskUsage.Views
             {
                 SelectedItem = hit.Item;
 
-                if (e.ClickCount == 2 && hit.IsDirectory)
+                if (hit.IsDirectory)
                 {
                     if (DrillDownCommand != null && DrillDownCommand.CanExecute(hit.Item))
                     {
                         DrillDownCommand.Execute(hit.Item);
                     }
                 }
+            }
+        }
+
+        private void OnMouseRightButtonDown(object sender, MouseButtonEventArgs e)
+        {
+            var pos = e.GetPosition(this);
+            var hit = HitTestNode(pos);
+
+            if (hit != null)
+            {
+                SelectedItem = hit.Item;
             }
         }
 
@@ -215,7 +230,7 @@ namespace DiskUsage.Views
             {
                 panel.Children.Add(new TextBlock
                 {
-                    Text = "💡 Double-click to drill down",
+                    Text = "💡 Click to focus into this folder",
                     FontSize = 11,
                     Foreground = Brushes.SkyBlue,
                     FontStyle = FontStyles.Italic,
