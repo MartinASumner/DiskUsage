@@ -16,6 +16,13 @@ using Microsoft.Win32;
 
 namespace DiskUsage.ViewModels
 {
+    public enum ContentViewMode
+    {
+        Split,
+        DetailsGrid,
+        VisualTreemap
+    }
+
     public partial class MainViewModel : ObservableObject
     {
         private readonly IDiskScannerService _scannerService;
@@ -63,6 +70,13 @@ namespace DiskUsage.ViewModels
         [ObservableProperty]
         private FileSystemItemViewModel? _selectedItem;
 
+        [ObservableProperty]
+        private ContentViewMode _viewMode = ContentViewMode.Split;
+
+        public bool IsDetailsVisible => ViewMode == ContentViewMode.DetailsGrid || ViewMode == ContentViewMode.Split;
+        public bool IsTreemapVisible => ViewMode == ContentViewMode.VisualTreemap || ViewMode == ContentViewMode.Split;
+        public bool IsSplitView => ViewMode == ContentViewMode.Split;
+
         public ObservableCollection<BreadcrumbItemViewModel> Breadcrumbs { get; } = new();
         public ObservableCollection<FileSystemItemViewModel> FilteredItems { get; } = new();
 
@@ -77,6 +91,22 @@ namespace DiskUsage.ViewModels
 
         public MainViewModel() : this(new DiskScannerService())
         {
+        }
+
+        partial void OnViewModeChanged(ContentViewMode value)
+        {
+            OnPropertyChanged(nameof(IsDetailsVisible));
+            OnPropertyChanged(nameof(IsTreemapVisible));
+            OnPropertyChanged(nameof(IsSplitView));
+        }
+
+        [RelayCommand]
+        private void SelectViewMode(string modeStr)
+        {
+            if (Enum.TryParse<ContentViewMode>(modeStr, true, out var mode))
+            {
+                ViewMode = mode;
+            }
         }
 
         partial void OnSearchTextChanged(string value)

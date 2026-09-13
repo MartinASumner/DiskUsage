@@ -153,5 +153,38 @@ namespace DiskUsage.Tests
             vm.SearchText = string.Empty;
             Assert.Equal(3, vm.FilteredItems.Count);
         }
+
+        [Fact]
+        public void ViewMode_Switching_UpdatesVisibilityProperties()
+        {
+            var vm = new MainViewModel();
+
+            // Default is Split
+            Assert.Equal(ContentViewMode.Split, vm.ViewMode);
+            Assert.True(vm.IsDetailsVisible);
+            Assert.True(vm.IsTreemapVisible);
+            Assert.True(vm.IsSplitView);
+
+            // Switch to DetailsGrid
+            vm.SelectViewModeCommand.Execute("DetailsGrid");
+            Assert.Equal(ContentViewMode.DetailsGrid, vm.ViewMode);
+            Assert.True(vm.IsDetailsVisible);
+            Assert.False(vm.IsTreemapVisible);
+            Assert.False(vm.IsSplitView);
+
+            // Switch to VisualTreemap
+            vm.SelectViewModeCommand.Execute("VisualTreemap");
+            Assert.Equal(ContentViewMode.VisualTreemap, vm.ViewMode);
+            Assert.False(vm.IsDetailsVisible);
+            Assert.True(vm.IsTreemapVisible);
+            Assert.False(vm.IsSplitView);
+
+            // Switch back to Split
+            vm.SelectViewModeCommand.Execute("Split");
+            Assert.Equal(ContentViewMode.Split, vm.ViewMode);
+            Assert.True(vm.IsDetailsVisible);
+            Assert.True(vm.IsTreemapVisible);
+            Assert.True(vm.IsSplitView);
+        }
     }
 }

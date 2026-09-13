@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:vm="clr-namespace:DiskUsage.ViewModels"
+        xmlns:views="clr-namespace:DiskUsage.Views"
         mc:Ignorable="d"
         Title="DiskUsage - Space &amp; Hierarchy Explorer" 
         Height="720" Width="1180"
@@ -217,190 +218,287 @@
             <!-- SPLITTER -->
             <GridSplitter Grid.Column="1" HorizontalAlignment="Stretch" Background="Transparent" Cursor="SizeWE" />
 
-            <!-- RIGHT PANE: DETAILS DATAGRID -->
+            <!-- RIGHT PANE: MULTI-VIEW (DETAILS DATAGRID + VISUAL TREEMAP) -->
             <Border Grid.Column="2" Background="#FFFFFF" BorderBrush="#DEE2E6" BorderThickness="1" CornerRadius="6">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <!-- Header with Folder Name & Quick Stats -->
+                        <!-- 0: Header with Folder Name & View Switcher -->
                         <RowDefinition Height="Auto" />
-                        <!-- DataGrid -->
+                        <!-- 1: Treemap Category Legend (visible when treemap shown) -->
+                        <RowDefinition Height="Auto" />
+                        <!-- 2: View Content Area (DataGrid + Treemap with Splitter) -->
                         <RowDefinition Height="*" />
                     </Grid.RowDefinitions>
 
-                    <!-- Details Header -->
-                    <Border Grid.Row="0" Background="#F8F9FA" BorderBrush="#E9ECEF" BorderThickness="0,0,0,1" Padding="12,10" CornerRadius="6,6,0,0">
+                    <!-- Row 0: Header with Folder Stats & View Switcher -->
+                    <Border Grid.Row="0" Background="#F8F9FA" BorderBrush="#E9ECEF" BorderThickness="0,0,0,1" Padding="12,8" CornerRadius="6,6,0,0">
                         <Grid>
                             <Grid.ColumnDefinitions>
                                 <ColumnDefinition Width="*" />
                                 <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="Auto" />
                             </Grid.ColumnDefinitions>
 
+                            <!-- Folder Name & Total Size -->
                             <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
                                 <TextBlock Text="📁" FontSize="14" Margin="0,0,6,0" VerticalAlignment="Center" />
                                 <TextBlock Text="{Binding CurrentFolder.Name, TargetNullValue='No Folder Selected'}" FontWeight="Bold" FontSize="14" Foreground="#212529" VerticalAlignment="Center" />
                                 <TextBlock Text=" - " Foreground="#6C757D" VerticalAlignment="Center" Margin="4,0" />
                                 <TextBlock Text="{Binding CurrentFolder.FormattedSize, TargetNullValue=''}" FontWeight="SemiBold" Foreground="#0D6EFD" FontSize="13" VerticalAlignment="Center" />
+                                <TextBlock Text="{Binding FilteredItems.Count, StringFormat=' ({0} items)'}" FontSize="12" Foreground="#6C757D" VerticalAlignment="Center" Margin="6,0,0,0" />
                             </StackPanel>
 
-                            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
-                                <TextBlock Text="{Binding FilteredItems.Count, StringFormat='{}{0} item(s)'}" FontSize="12" Foreground="#6C757D" VerticalAlignment="Center" />
-                            </StackPanel>
+                            <!-- View Mode Switcher Pills -->
+                            <Border Grid.Column="1" Background="#E9ECEF" CornerRadius="5" Padding="2" Margin="12,0,0,0" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal">
+                                    <!-- Split View -->
+                                    <Button Content="📊 Split" 
+                                            Command="{Binding SelectViewModeCommand}" 
+                                            CommandParameter="Split"
+                                            Background="{Binding ViewMode, Converter={StaticResource EnumMatchToBackgroundConverter}, ConverterParameter=Split}"
+                                            Foreground="{Binding ViewMode, Converter={StaticResource EnumMatchToForegroundConverter}, ConverterParameter=Split}"
+                                            FontWeight="Medium" FontSize="12" Padding="8,3" BorderThickness="0" Cursor="Hand" Margin="1" />
+
+                                    <!-- Details Grid Only -->
+                                    <Button Content="📋 List" 
+                                            Command="{Binding SelectViewModeCommand}" 
+                                            CommandParameter="DetailsGrid"
+                                            Background="{Binding ViewMode, Converter={StaticResource EnumMatchToBackgroundConverter}, ConverterParameter=DetailsGrid}"
+                                            Foreground="{Binding ViewMode, Converter={StaticResource EnumMatchToForegroundConverter}, ConverterParameter=DetailsGrid}"
+                                            FontWeight="Medium" FontSize="12" Padding="8,3" BorderThickness="0" Cursor="Hand" Margin="1" />
+
+                                    <!-- Visual Treemap Only -->
+                                    <Button Content="🗺️ Treemap" 
+                                            Command="{Binding SelectViewModeCommand}" 
+                                            CommandParameter="VisualTreemap"
+                                            Background="{Binding ViewMode, Converter={StaticResource EnumMatchToBackgroundConverter}, ConverterParameter=VisualTreemap}"
+                                            Foreground="{Binding ViewMode, Converter={StaticResource EnumMatchToForegroundConverter}, ConverterParameter=VisualTreemap}"
+                                            FontWeight="Medium" FontSize="12" Padding="8,3" BorderThickness="0" Cursor="Hand" Margin="1" />
+                                </StackPanel>
+                            </Border>
                         </Grid>
                     </Border>
 
-                    <!-- DataGrid View -->
-                    <DataGrid Grid.Row="1"
-                              ItemsSource="{Binding FilteredItems}"
-                              SelectedItem="{Binding SelectedItem}"
-                              AutoGenerateColumns="False"
-                              IsReadOnly="True"
-                              CanUserSortColumns="True"
-                              CanUserReorderColumns="True"
-                              CanUserResizeColumns="True"
-                              GridLinesVisibility="Horizontal"
-                              HorizontalGridLinesBrush="#F1F3F5"
-                              BorderThickness="0"
-                              RowHeaderWidth="0"
-                              SelectionMode="Single"
-                              Background="#FFFFFF"
-                              MouseDoubleClick="DataGrid_MouseDoubleClick">
+                    <!-- Row 1: Treemap Category Color Legend -->
+                    <Border Grid.Row="1" Background="#212529" Padding="10,4" Visibility="{Binding IsTreemapVisible, Converter={StaticResource BooleanToVisibilityConverter}}">
+                        <WrapPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <TextBlock Text="Categories:" Foreground="#ADB5BD" FontSize="11" FontWeight="SemiBold" Margin="0,0,8,0" VerticalAlignment="Center" />
 
-                        <!-- Context Menu -->
-                        <DataGrid.ContextMenu>
-                            <ContextMenu>
-                                <MenuItem Header="🔍 Drill Down into Folder" 
-                                          Command="{Binding NavigateToFolderCommand}" 
-                                          CommandParameter="{Binding SelectedItem}" />
-                                <Separator />
-                                <MenuItem Header="📁 Open in File Explorer" 
-                                          Command="{Binding OpenInExplorerCommand}" 
-                                          CommandParameter="{Binding SelectedItem}" />
-                                <MenuItem Header="📋 Copy Full Path" 
-                                          Command="{Binding CopyPathCommand}" 
-                                          CommandParameter="{Binding SelectedItem}" />
-                            </ContextMenu>
-                        </DataGrid.ContextMenu>
+                            <!-- Media -->
+                            <Border Width="10" Height="10" Background="#9B59B6" CornerRadius="2" Margin="4,0,3,0" VerticalAlignment="Center" />
+                            <TextBlock Text="Media" Foreground="#DEE2E6" FontSize="11" Margin="0,0,8,0" VerticalAlignment="Center" />
 
-                        <DataGrid.Columns>
-                            <!-- Column 1: Type / Icon -->
-                            <DataGridTemplateColumn Header="Type" Width="70" CanUserSort="True" SortMemberPath="ItemType">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
-                                            <TextBlock Text="{Binding ItemType, Converter={StaticResource ItemTypeToGlyphConverter}}" FontSize="14" />
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
+                            <!-- Archive -->
+                            <Border Width="10" Height="10" Background="#E67E22" CornerRadius="2" Margin="4,0,3,0" VerticalAlignment="Center" />
+                            <TextBlock Text="Archive" Foreground="#DEE2E6" FontSize="11" Margin="0,0,8,0" VerticalAlignment="Center" />
 
-                            <!-- Column 2: Name -->
-                            <DataGridTemplateColumn Header="Name" Width="*" CanUserSort="True" SortMemberPath="Name">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="4,2">
-                                            <TextBlock Text="{Binding Name}" 
-                                                       FontWeight="Medium" 
+                            <!-- Code -->
+                            <Border Width="10" Height="10" Background="#2980B9" CornerRadius="2" Margin="4,0,3,0" VerticalAlignment="Center" />
+                            <TextBlock Text="Code" Foreground="#DEE2E6" FontSize="11" Margin="0,0,8,0" VerticalAlignment="Center" />
+
+                            <!-- Image -->
+                            <Border Width="10" Height="10" Background="#27AE60" CornerRadius="2" Margin="4,0,3,0" VerticalAlignment="Center" />
+                            <TextBlock Text="Image" Foreground="#DEE2E6" FontSize="11" Margin="0,0,8,0" VerticalAlignment="Center" />
+
+                            <!-- Binary / Executable -->
+                            <Border Width="10" Height="10" Background="#E74C3C" CornerRadius="2" Margin="4,0,3,0" VerticalAlignment="Center" />
+                            <TextBlock Text="Binary" Foreground="#DEE2E6" FontSize="11" Margin="0,0,8,0" VerticalAlignment="Center" />
+
+                            <!-- Document -->
+                            <Border Width="10" Height="10" Background="#16A085" CornerRadius="2" Margin="4,0,3,0" VerticalAlignment="Center" />
+                            <TextBlock Text="Doc" Foreground="#DEE2E6" FontSize="11" Margin="0,0,8,0" VerticalAlignment="Center" />
+
+                            <!-- Directory -->
+                            <Border Width="10" Height="10" Background="#465A78" CornerRadius="2" Margin="4,0,3,0" VerticalAlignment="Center" />
+                            <TextBlock Text="Folder" Foreground="#DEE2E6" FontSize="11" Margin="0,0,8,0" VerticalAlignment="Center" />
+
+                            <!-- Other -->
+                            <Border Width="10" Height="10" Background="#7F8C8D" CornerRadius="2" Margin="4,0,3,0" VerticalAlignment="Center" />
+                            <TextBlock Text="Other" Foreground="#DEE2E6" FontSize="11" VerticalAlignment="Center" />
+                        </WrapPanel>
+                    </Border>
+
+                    <!-- Row 2: Content Area (DataGrid + Treemap) -->
+                    <Grid Grid.Row="2">
+                        <Grid.RowDefinitions>
+                            <!-- Row 0: DataGrid -->
+                            <RowDefinition Height="*" />
+                            <!-- Row 1: Splitter (visible in Split mode) -->
+                            <RowDefinition Height="Auto" />
+                            <!-- Row 2: Treemap -->
+                            <RowDefinition Height="*" />
+                        </Grid.RowDefinitions>
+
+                        <!-- DataGrid View -->
+                        <DataGrid Grid.Row="0"
+                                  ItemsSource="{Binding FilteredItems}"
+                                  SelectedItem="{Binding SelectedItem}"
+                                  Visibility="{Binding IsDetailsVisible, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                  AutoGenerateColumns="False"
+                                  IsReadOnly="True"
+                                  CanUserSortColumns="True"
+                                  CanUserReorderColumns="True"
+                                  CanUserResizeColumns="True"
+                                  GridLinesVisibility="Horizontal"
+                                  HorizontalGridLinesBrush="#F1F3F5"
+                                  BorderThickness="0"
+                                  RowHeaderWidth="0"
+                                  SelectionMode="Single"
+                                  Background="#FFFFFF"
+                                  MouseDoubleClick="DataGrid_MouseDoubleClick">
+
+                            <!-- Context Menu -->
+                            <DataGrid.ContextMenu>
+                                <ContextMenu>
+                                    <MenuItem Header="🔍 Drill Down into Folder" 
+                                              Command="{Binding NavigateToFolderCommand}" 
+                                              CommandParameter="{Binding SelectedItem}" />
+                                    <Separator />
+                                    <MenuItem Header="📁 Open in File Explorer" 
+                                              Command="{Binding OpenInExplorerCommand}" 
+                                              CommandParameter="{Binding SelectedItem}" />
+                                    <MenuItem Header="📋 Copy Full Path" 
+                                              Command="{Binding CopyPathCommand}" 
+                                              CommandParameter="{Binding SelectedItem}" />
+                                </ContextMenu>
+                            </DataGrid.ContextMenu>
+
+                            <DataGrid.Columns>
+                                <!-- Column 1: Type / Icon -->
+                                <DataGridTemplateColumn Header="Type" Width="70" CanUserSort="True" SortMemberPath="ItemType">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                                <TextBlock Text="{Binding ItemType, Converter={StaticResource ItemTypeToGlyphConverter}}" FontSize="14" />
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <!-- Column 2: Name -->
+                                <DataGridTemplateColumn Header="Name" Width="*" CanUserSort="True" SortMemberPath="Name">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="4,2">
+                                                <TextBlock Text="{Binding Name}" 
+                                                           FontWeight="Medium" 
+                                                           FontSize="13" 
+                                                           Foreground="#212529"
+                                                           VerticalAlignment="Center"
+                                                           ToolTip="{Binding FullPath}" />
+                                                <!-- Error badge if permission denied -->
+                                                <Border Background="#FFEBEE" 
+                                                        CornerRadius="3" 
+                                                        Padding="4,1" 
+                                                        Margin="6,0,0,0" 
+                                                        Visibility="{Binding HasAccessError, Converter={StaticResource BooleanToVisibilityConverter}}"
+                                                        ToolTip="{Binding ErrorMessage}">
+                                                    <TextBlock Text="⚠️ Access Error" Foreground="#C62828" FontSize="11" FontWeight="SemiBold" />
+                                                </Border>
+                                            </StackPanel>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+
+                                <!-- Column 3: Size -->
+                                <DataGridTemplateColumn Header="Size" Width="110" CanUserSort="True" SortMemberPath="Size">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding FormattedSize}" 
+                                                       FontWeight="SemiBold" 
                                                        FontSize="13" 
                                                        Foreground="#212529"
-                                                       VerticalAlignment="Center"
-                                                       ToolTip="{Binding FullPath}" />
-                                            <!-- Error badge if permission denied -->
-                                            <Border Background="#FFEBEE" 
-                                                    CornerRadius="3" 
-                                                    Padding="4,1" 
-                                                    Margin="6,0,0,0" 
-                                                    Visibility="{Binding HasAccessError, Converter={StaticResource BooleanToVisibilityConverter}}"
-                                                    ToolTip="{Binding ErrorMessage}">
-                                                <TextBlock Text="⚠️ Access Error" Foreground="#C62828" FontSize="11" FontWeight="SemiBold" />
-                                            </Border>
-                                        </StackPanel>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
+                                                       HorizontalAlignment="Right" 
+                                                       VerticalAlignment="Center" 
+                                                       Margin="4,2,12,2" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
 
-                            <!-- Column 3: Size -->
-                            <DataGridTemplateColumn Header="Size" Width="110" CanUserSort="True" SortMemberPath="Size">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding FormattedSize}" 
-                                                   FontWeight="SemiBold" 
-                                                   FontSize="13" 
-                                                   Foreground="#212529"
-                                                   HorizontalAlignment="Right" 
-                                                   VerticalAlignment="Center" 
-                                                   Margin="4,2,12,2" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
+                                <!-- Column 4: % of Parent with Visual Bar -->
+                                <DataGridTemplateColumn Header="% of Parent" Width="150" CanUserSort="True" SortMemberPath="PercentOfParent">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <Grid Margin="4,4,8,4" VerticalAlignment="Center">
+                                                <!-- Background Bar Track -->
+                                                <Border Height="16" Background="#E9ECEF" CornerRadius="3" />
+                                                <!-- Colored Percentage Fill Bar -->
+                                                <ProgressBar Height="16" 
+                                                             Minimum="0" Maximum="100" 
+                                                             Value="{Binding PercentOfParent, Mode=OneWay}" 
+                                                             Foreground="{Binding PercentOfParent, Converter={StaticResource PercentageToBrushConverter}}" 
+                                                             Background="Transparent"
+                                                             BorderThickness="0" />
+                                                <!-- Percentage Text Overlay -->
+                                                <TextBlock Text="{Binding PercentOfParentText}" 
+                                                           FontSize="11" 
+                                                           FontWeight="Bold" 
+                                                           Foreground="#212529" 
+                                                           HorizontalAlignment="Center" 
+                                                           VerticalAlignment="Center" />
+                                            </Grid>
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
 
-                            <!-- Column 4: % of Parent with Visual Bar -->
-                            <DataGridTemplateColumn Header="% of Parent" Width="150" CanUserSort="True" SortMemberPath="PercentOfParent">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <Grid Margin="4,4,8,4" VerticalAlignment="Center">
-                                            <!-- Background Bar Track -->
-                                            <Border Height="16" Background="#E9ECEF" CornerRadius="3" />
-                                            <!-- Colored Percentage Fill Bar -->
-                                            <ProgressBar Height="16" 
-                                                         Minimum="0" Maximum="100" 
-                                                         Value="{Binding PercentOfParent, Mode=OneWay}" 
-                                                         Foreground="{Binding PercentOfParent, Converter={StaticResource PercentageToBrushConverter}}" 
-                                                         Background="Transparent"
-                                                         BorderThickness="0" />
-                                            <!-- Percentage Text Overlay -->
-                                            <TextBlock Text="{Binding PercentOfParentText}" 
-                                                       FontSize="11" 
-                                                       FontWeight="Bold" 
-                                                       Foreground="#212529" 
-                                                       HorizontalAlignment="Center" 
-                                                       VerticalAlignment="Center" />
-                                        </Grid>
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
+                                <!-- Column 5: Files Count -->
+                                <DataGridTemplateColumn Header="Files" Width="80" CanUserSort="True" SortMemberPath="FileCount">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding FileCount, StringFormat='{}{0:N0}'}" 
+                                                       FontSize="12" 
+                                                       Foreground="#6C757D"
+                                                       HorizontalAlignment="Right" 
+                                                       VerticalAlignment="Center" 
+                                                       Margin="4,2,8,2" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
 
-                            <!-- Column 5: Files Count -->
-                            <DataGridTemplateColumn Header="Files" Width="80" CanUserSort="True" SortMemberPath="FileCount">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding FileCount, StringFormat='{}{0:N0}'}" 
-                                                   FontSize="12" 
-                                                   Foreground="#6C757D"
-                                                   HorizontalAlignment="Right" 
-                                                   VerticalAlignment="Center" 
-                                                   Margin="4,2,8,2" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
+                                <!-- Column 6: Subfolders Count -->
+                                <DataGridTemplateColumn Header="Folders" Width="80" CanUserSort="True" SortMemberPath="DirectoryCount">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding DirectoryCount, StringFormat='{}{0:N0}'}" 
+                                                       FontSize="12" 
+                                                       Foreground="#6C757D"
+                                                       HorizontalAlignment="Right" 
+                                                       VerticalAlignment="Center" 
+                                                       Margin="4,2,8,2" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
 
-                            <!-- Column 6: Subfolders Count -->
-                            <DataGridTemplateColumn Header="Folders" Width="80" CanUserSort="True" SortMemberPath="DirectoryCount">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding DirectoryCount, StringFormat='{}{0:N0}'}" 
-                                                   FontSize="12" 
-                                                   Foreground="#6C757D"
-                                                   HorizontalAlignment="Right" 
-                                                   VerticalAlignment="Center" 
-                                                   Margin="4,2,8,2" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
+                                <!-- Column 7: Date Modified -->
+                                <DataGridTemplateColumn Header="Modified" Width="140" CanUserSort="True" SortMemberPath="LastModified">
+                                    <DataGridTemplateColumn.CellTemplate>
+                                        <DataTemplate>
+                                            <TextBlock Text="{Binding LastModified, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" 
+                                                       FontSize="12" 
+                                                       Foreground="#6C757D"
+                                                       VerticalAlignment="Center" 
+                                                       Margin="4,2" />
+                                        </DataTemplate>
+                                    </DataGridTemplateColumn.CellTemplate>
+                                </DataGridTemplateColumn>
+                            </DataGrid.Columns>
+                        </DataGrid>
 
-                            <!-- Column 7: Date Modified -->
-                            <DataGridTemplateColumn Header="Modified" Width="140" CanUserSort="True" SortMemberPath="LastModified">
-                                <DataGridTemplateColumn.CellTemplate>
-                                    <DataTemplate>
-                                        <TextBlock Text="{Binding LastModified, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}" 
-                                                   FontSize="12" 
-                                                   Foreground="#6C757D"
-                                                   VerticalAlignment="Center" 
-                                                   Margin="4,2" />
-                                    </DataTemplate>
-                                </DataGridTemplateColumn.CellTemplate>
-                            </DataGridTemplateColumn>
-                        </DataGrid.Columns>
-                    </DataGrid>
+                        <!-- Horizontal Splitter for Split View -->
+                        <GridSplitter Grid.Row="1" 
+                                      Height="6" 
+                                      HorizontalAlignment="Stretch" 
+                                      Background="#CED4DA" 
+                                      Cursor="SizeNS" 
+                                      Visibility="{Binding IsSplitView, Converter={StaticResource BooleanToVisibilityConverter}}" />
+
+                        <!-- Treemap Visual Control -->
+                        <views:TreemapControl Grid.Row="2"
+                                              ItemsSource="{Binding FilteredItems}"
+                                              SelectedItem="{Binding SelectedItem, Mode=TwoWay}"
+                                              DrillDownCommand="{Binding NavigateToFolderCommand}"
+                                              Visibility="{Binding IsTreemapVisible, Converter={StaticResource BooleanToVisibilityConverter}}" />
+                    </Grid>
                 </Grid>
             </Border>
         </Grid>
