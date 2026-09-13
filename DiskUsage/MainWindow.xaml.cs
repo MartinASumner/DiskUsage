@@ -15,6 +15,15 @@ namespace DiskUsage
             InitializeComponent();
         }
 
+        private void TreeViewItem_Selected(object sender, RoutedEventArgs e)
+        {
+            if (sender is TreeViewItem tvi)
+            {
+                tvi.BringIntoView();
+                e.Handled = true;
+            }
+        }
+
         private void TreeView_SelectedItemChanged(object sender, RoutedPropertyChangedEventArgs<object> e)
         {
             if (DataContext is MainViewModel vm && e.NewValue is FileSystemItemViewModel selectedFolder)

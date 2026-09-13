@@ -68,5 +68,23 @@ namespace DiskUsage.Tests
             Assert.Equal("Dir1", parentVm.DirectoryChildren[0].Name);
             Assert.Equal(2, parentVm.AllChildren.Count);
         }
+
+        [Fact]
+        public void DirectoryChildren_SharesSameInstancesWithAllChildren()
+        {
+            var parentModel = new FileSystemItem
+            {
+                Name = "Parent",
+                ItemType = FileSystemItemType.Directory,
+                Size = 300
+            };
+
+            parentModel.Children.Add(new FileSystemItem { Name = "Dir1", ItemType = FileSystemItemType.Directory, Size = 100 });
+            parentModel.Children.Add(new FileSystemItem { Name = "File1.txt", ItemType = FileSystemItemType.File, Size = 200 });
+
+            var parentVm = new FileSystemItemViewModel(parentModel);
+
+            Assert.Same(parentVm.AllChildren[0], parentVm.DirectoryChildren[0]);
+        }
     }
 }

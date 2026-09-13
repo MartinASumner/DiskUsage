@@ -79,6 +79,7 @@ namespace DiskUsage.ViewModels
 
         public ObservableCollection<BreadcrumbItemViewModel> Breadcrumbs { get; } = new();
         public ObservableCollection<FileSystemItemViewModel> FilteredItems { get; } = new();
+        public ObservableCollection<FileSystemItemViewModel> RootNodes { get; } = new();
 
         public bool CanGoBack => _backHistory.Count > 0;
         public bool CanGoForward => _forwardHistory.Count > 0;
@@ -91,6 +92,15 @@ namespace DiskUsage.ViewModels
 
         public MainViewModel() : this(new DiskScannerService())
         {
+        }
+
+        partial void OnRootItemChanged(FileSystemItemViewModel? value)
+        {
+            RootNodes.Clear();
+            if (value != null)
+            {
+                RootNodes.Add(value);
+            }
         }
 
         partial void OnViewModeChanged(ContentViewMode value)
@@ -116,6 +126,18 @@ namespace DiskUsage.ViewModels
 
         partial void OnCurrentFolderChanged(FileSystemItemViewModel? value)
         {
+            if (value != null)
+            {
+                var ancestor = value.Parent;
+                while (ancestor != null)
+                {
+                    ancestor.IsExpanded = true;
+                    ancestor = ancestor.Parent;
+                }
+
+                value.IsSelected = true;
+            }
+
             UpdateBreadcrumbs(value);
             ApplyFilter();
             NotifyNavigationState();

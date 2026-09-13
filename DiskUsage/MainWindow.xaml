@@ -189,7 +189,7 @@
                     </Border>
 
                     <TreeView Grid.Row="1" 
-                              ItemsSource="{Binding RootItem.DirectoryChildren}" 
+                              ItemsSource="{Binding RootNodes}" 
                               SelectedItemChanged="TreeView_SelectedItemChanged"
                               BorderThickness="0" 
                               Padding="4">
@@ -198,6 +198,7 @@
                                 <Setter Property="IsExpanded" Value="{Binding IsExpanded, Mode=TwoWay}" />
                                 <Setter Property="IsSelected" Value="{Binding IsSelected, Mode=TwoWay}" />
                                 <Setter Property="Padding" Value="4,3" />
+                                <EventSetter Event="Selected" Handler="TreeViewItem_Selected" />
                             </Style>
                         </TreeView.ItemContainerStyle>
                         <TreeView.ItemTemplate>

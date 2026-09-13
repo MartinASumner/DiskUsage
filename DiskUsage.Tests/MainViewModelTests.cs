@@ -186,5 +186,40 @@ namespace DiskUsage.Tests
             Assert.True(vm.IsTreemapVisible);
             Assert.True(vm.IsSplitView);
         }
+
+        [Fact]
+        public void TreeViewSync_ExpandsAncestorsAndSelectsNode_WhenNavigating()
+        {
+            var rootModel = new FileSystemItem { Name = "Root", FullPath = @"C:\Root", ItemType = FileSystemItemType.Directory, Size = 1000 };
+            var childModel = new FileSystemItem { Name = "Child", FullPath = @"C:\Root\Child", ItemType = FileSystemItemType.Directory, Size = 500, Parent = rootModel };
+            var grandChildModel = new FileSystemItem { Name = "GrandChild", FullPath = @"C:\Root\Child\GrandChild", ItemType = FileSystemItemType.Directory, Size = 200, Parent = childModel };
+
+            rootModel.Children.Add(childModel);
+            childModel.Children.Add(grandChildModel);
+
+            var rootVm = new FileSystemItemViewModel(rootModel);
+            var vm = new MainViewModel(new MockScannerService(rootModel))
+            {
+                RootItem = rootVm
+            };
+
+            Assert.Single(vm.RootNodes);
+            Assert.Same(rootVm, vm.RootNodes[0]);
+
+            var childVm = rootVm.DirectoryChildren[0];
+            var grandChildVm = childVm.DirectoryChildren[0];
+
+            // Initially not expanded or selected
+            Assert.False(rootVm.IsExpanded);
+            Assert.False(childVm.IsExpanded);
+            Assert.False(grandChildVm.IsSelected);
+
+            // Navigate to GrandChild
+            vm.NavigateToFolder(grandChildVm);
+
+            Assert.True(rootVm.IsExpanded);
+            Assert.True(childVm.IsExpanded);
+            Assert.True(grandChildVm.IsSelected);
+        }
     }
 }
