@@ -10,6 +10,8 @@
         <converters:PercentageToBrushConverter x:Key="PercentageToBrushConverter" />
         <converters:ItemTypeToGlyphConverter x:Key="ItemTypeToGlyphConverter" />
         <converters:NullToVisibilityConverter x:Key="NullToVisibilityConverter" />
+        <converters:EnumMatchToBrushConverter x:Key="EnumMatchToBackgroundConverter" />
+        <converters:EnumMatchToBrushConverter x:Key="EnumMatchToForegroundConverter" TargetTextForeground="True" />
         <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
 
         <!-- Colors & Brushes -->

@@ -16,6 +16,13 @@ using Microsoft.Win32;
 
 namespace DiskUsage.ViewModels
 {
+    public enum ContentViewMode
+    {
+        Split,
+        DetailsGrid,
+        VisualTreemap
+    }
+
     public partial class MainViewModel : ObservableObject
     {
         private readonly IDiskScannerService _scannerService;
@@ -63,8 +70,16 @@ namespace DiskUsage.ViewModels
         [ObservableProperty]
         private FileSystemItemViewModel? _selectedItem;
 
+        [ObservableProperty]
+        private ContentViewMode _viewMode = ContentViewMode.Split;
+
+        public bool IsDetailsVisible => ViewMode == ContentViewMode.DetailsGrid || ViewMode == ContentViewMode.Split;
+        public bool IsTreemapVisible => ViewMode == ContentViewMode.VisualTreemap || ViewMode == ContentViewMode.Split;
+        public bool IsSplitView => ViewMode == ContentViewMode.Split;
+
         public ObservableCollection<BreadcrumbItemViewModel> Breadcrumbs { get; } = new();
         public ObservableCollection<FileSystemItemViewModel> FilteredItems { get; } = new();
+        public ObservableCollection<FileSystemItemViewModel> RootNodes { get; } = new();
 
         public bool CanGoBack => _backHistory.Count > 0;
         public bool CanGoForward => _forwardHistory.Count > 0;
@@ -79,6 +94,31 @@ namespace DiskUsage.ViewModels
         {
         }
 
+        partial void OnRootItemChanged(FileSystemItemViewModel? value)
+        {
+            RootNodes.Clear();
+            if (value != null)
+            {
+                RootNodes.Add(value);
+            }
+        }
+
+        partial void OnViewModeChanged(ContentViewMode value)
+        {
+            OnPropertyChanged(nameof(IsDetailsVisible));
+            OnPropertyChanged(nameof(IsTreemapVisible));
+            OnPropertyChanged(nameof(IsSplitView));
+        }
+
+        [RelayCommand]
+        private void SelectViewMode(string modeStr)
+        {
+            if (Enum.TryParse<ContentViewMode>(modeStr, true, out var mode))
+            {
+                ViewMode = mode;
+            }
+        }
+
         partial void OnSearchTextChanged(string value)
         {
             ApplyFilter();
@@ -86,6 +126,18 @@ namespace DiskUsage.ViewModels
 
         partial void OnCurrentFolderChanged(FileSystemItemViewModel? value)
         {
+            if (value != null)
+            {
+                var ancestor = value.Parent;
+                while (ancestor != null)
+                {
+                    ancestor.IsExpanded = true;
+                    ancestor = ancestor.Parent;
+                }
+
+                value.IsSelected = true;
+            }
+
             UpdateBreadcrumbs(value);
             ApplyFilter();
             NotifyNavigationState();

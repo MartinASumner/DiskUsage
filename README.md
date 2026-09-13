@@ -14,6 +14,12 @@ A fast, interactive C# WPF desktop application built on **.NET 8** to scan folde
   - **Left Pane**: Expandable directory hierarchy with folder size badges.
   - **Right Pane**: Detailed list of files and subdirectories sorted by size (largest first).
   - Columns: Item Type, Name, Size, % of Parent (with visual progress bar), File Count, Folder Count, and Date Modified.
+- **Interactive Visual Treemap**:
+  - Squarified proportional treemap rendering files and directories by size.
+  - Category-based color coding (Media, Archive, Code, Image, Binary, Document, Directory, Other).
+  - Hover tooltips showing file size, path, category, and percentage.
+  - Interactive selection and double-click drill-down navigation into subfolders.
+  - Flexible **View Switcher** toolbar: **Split View**, **List View**, and **Treemap View**.
 - **Interactive Drill-Through Navigation**:
   - Double-click any folder row in the grid to drill into that subfolder level.
   - Navigation Toolbar: **Back**, **Forward**, and **Up One Level** buttons.

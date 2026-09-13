@@ -72,11 +72,11 @@ namespace DiskUsage.ViewModels
                 if (_directoryChildren == null)
                 {
                     _directoryChildren = new ObservableCollection<FileSystemItemViewModel>();
-                    foreach (var child in _model.Children)
+                    foreach (var child in AllChildren)
                     {
                         if (child.IsDirectory)
                         {
-                            _directoryChildren.Add(new FileSystemItemViewModel(child, this));
+                            _directoryChildren.Add(child);
                         }
                     }
                 }

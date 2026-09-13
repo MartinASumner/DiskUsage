@@ -153,5 +153,79 @@ namespace DiskUsage.Tests
             vm.SearchText = string.Empty;
             Assert.Equal(3, vm.FilteredItems.Count);
         }
+
+        [Fact]
+        public void ViewMode_Switching_UpdatesVisibilityProperties()
+        {
+            var vm = new MainViewModel();
+
+            // Default is Split
+            Assert.Equal(ContentViewMode.Split, vm.ViewMode);
+            Assert.True(vm.IsDetailsVisible);
+            Assert.True(vm.IsTreemapVisible);
+            Assert.True(vm.IsSplitView);
+
+            // Switch to DetailsGrid
+            vm.SelectViewModeCommand.Execute("DetailsGrid");
+            Assert.Equal(ContentViewMode.DetailsGrid, vm.ViewMode);
+            Assert.True(vm.IsDetailsVisible);
+            Assert.False(vm.IsTreemapVisible);
+            Assert.False(vm.IsSplitView);
+
+            // Switch to VisualTreemap
+            vm.SelectViewModeCommand.Execute("VisualTreemap");
+            Assert.Equal(ContentViewMode.VisualTreemap, vm.ViewMode);
+            Assert.False(vm.IsDetailsVisible);
+            Assert.True(vm.IsTreemapVisible);
+            Assert.False(vm.IsSplitView);
+
+            // Switch back to Split
+            vm.SelectViewModeCommand.Execute("Split");
+            Assert.Equal(ContentViewMode.Split, vm.ViewMode);
+            Assert.True(vm.IsDetailsVisible);
+            Assert.True(vm.IsTreemapVisible);
+            Assert.True(vm.IsSplitView);
+        }
+
+        [Fact]
+        public void TreeViewSync_ExpandsAncestorsAndSelectsNode_WhenNavigating()
+        {
+            var rootModel = new FileSystemItem { Name = "Root", FullPath = @"C:\Root", ItemType = FileSystemItemType.Directory, Size = 1000 };
+            var childModel = new FileSystemItem { Name = "Child", FullPath = @"C:\Root\Child", ItemType = FileSystemItemType.Directory, Size = 500, Parent = rootModel };
+            var grandChildModel = new FileSystemItem { Name = "GrandChild", FullPath = @"C:\Root\Child\GrandChild", ItemType = FileSystemItemType.Directory, Size = 200, Parent = childModel };
+
+            rootModel.Children.Add(childModel);
+            childModel.Children.Add(grandChildModel);
+
+            var rootVm = new FileSystemItemViewModel(rootModel);
+            var vm = new MainViewModel(new MockScannerService(rootModel))
+            {
+                RootItem = rootVm
+            };
+
+            Assert.Single(vm.RootNodes);
+            Assert.Same(rootVm, vm.RootNodes[0]);
+
+            var childVm = rootVm.DirectoryChildren[0];
+            var grandChildVm = childVm.DirectoryChildren[0];
+
+            // Initially not expanded or selected
+            Assert.False(rootVm.IsExpanded);
+            Assert.False(childVm.IsExpanded);
+            Assert.False(grandChildVm.IsSelected);
+
+            // Navigate to GrandChild
+            vm.NavigateToFolder(grandChildVm);
+
+            Assert.True(rootVm.IsExpanded);
+            Assert.True(childVm.IsExpanded);
+            Assert.True(grandChildVm.IsSelected);
+
+            // Navigate back up to Child
+            vm.NavigateToFolder(childVm);
+            Assert.True(childVm.IsSelected);
+            Assert.NotNull(vm.CurrentFolder);
+            Assert.Equal("Child", vm.CurrentFolder.Name);
+        }
     }
 }
